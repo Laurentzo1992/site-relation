@@ -12,6 +12,9 @@ function buildPageList(current, totalPages) {
     .sort((a, b) => a - b);
 }
 
+const EMPTY_SEARCH = { q: "", city: "" };
+const EMPTY_FILTERS = { q: "", city: "", gender: "" };
+
 export default function AdsList() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -19,15 +22,40 @@ export default function AdsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [searchInput, setSearchInput] = useState(EMPTY_SEARCH);
+  const [gender, setGender] = useState("");
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+
+  // Debounce free-text search / city so we don't fire a request per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((f) => ({ ...f, q: searchInput.q, city: searchInput.city }));
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setFilters((f) => ({ ...f, gender }));
+    setPage(1);
+  }, [gender]);
+
   useEffect(() => {
     setLoading(true);
     setError("");
-    listAds({ page, pageSize: ADS_PAGE_SIZE })
+    listAds({ page, pageSize: ADS_PAGE_SIZE, ...filters })
       .then((res) => setData(res.data))
       .catch(() => setError("Impossible de charger les annonces pour le moment."))
       .finally(() => setLoading(false));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [page]);
+  }, [page, filters]);
+
+  const hasActiveFilters = filters.q || filters.city || filters.gender;
+
+  const clearFilters = () => {
+    setSearchInput(EMPTY_SEARCH);
+    setGender("");
+  };
 
   const totalPages = data?.total_pages ?? 1;
   const pageList = buildPageList(page, totalPages);
@@ -67,6 +95,34 @@ export default function AdsList() {
 
       <h2 id="annonces">Annonces</h2>
 
+      <div className="search-bar">
+        <input
+          type="search"
+          placeholder="Rechercher une annonce..."
+          value={searchInput.q}
+          onChange={(e) => setSearchInput((s) => ({ ...s, q: e.target.value }))}
+          aria-label="Rechercher une annonce"
+        />
+        <input
+          type="text"
+          placeholder="Ville"
+          value={searchInput.city}
+          onChange={(e) => setSearchInput((s) => ({ ...s, city: e.target.value }))}
+          aria-label="Filtrer par ville"
+        />
+        <select value={gender} onChange={(e) => setGender(e.target.value)} aria-label="Filtrer par genre">
+          <option value="">Tous les genres</option>
+          <option value="homme">Homme</option>
+          <option value="femme">Femme</option>
+          <option value="autre">Autre</option>
+        </select>
+        {hasActiveFilters && (
+          <button type="button" className="btn-outline" onClick={clearFilters}>
+            Effacer
+          </button>
+        )}
+      </div>
+
       {error && <p className="error">{error}</p>}
 
       {loading && (
@@ -77,7 +133,17 @@ export default function AdsList() {
         </div>
       )}
 
-      {!loading && data && data.items.length === 0 && (
+      {!loading && data && data.items.length === 0 && hasActiveFilters && (
+        <div className="empty-state fade-in">
+          <div className="empty-icon">🔍</div>
+          <p>Aucune annonce ne correspond a ta recherche.</p>
+          <button type="button" className="btn" onClick={clearFilters}>
+            Effacer les filtres
+          </button>
+        </div>
+      )}
+
+      {!loading && data && data.items.length === 0 && !hasActiveFilters && (
         <div className="empty-state fade-in">
           <div className="empty-icon">💌</div>
           <p>Aucune annonce pour l'instant — soyez le premier a tenter votre chance !</p>

@@ -1,7 +1,15 @@
 import client from "./client";
 
-export function listAds({ page, pageSize }) {
-  return client.get("/ads", { params: { page, page_size: pageSize } });
+export function listAds({ page, pageSize, q, city, gender }) {
+  return client.get("/ads", {
+    params: {
+      page,
+      page_size: pageSize,
+      q: q || undefined,
+      city: city || undefined,
+      gender: gender || undefined,
+    },
+  });
 }
 
 export function getAd(id) {

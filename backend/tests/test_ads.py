@@ -1,3 +1,33 @@
+def test_search_by_keyword_city_and_gender(client, register_user, publish_ad):
+    femme = register_user(email="alice@example.com", full_name="Alice Kone", gender="femme")
+    publish_ad(femme, title="Passionnee de musique", description="J'adore la guitare", city="Abidjan")
+
+    homme = register_user(email="bob@example.com", full_name="Bob", phone="+22676275726", gender="homme")
+    publish_ad(homme, title="Amateur de cinema", description="Fan de films", city="Ouagadougou")
+
+    by_keyword = client.get("/ads", params={"q": "musique"}).json()
+    assert by_keyword["total"] == 1
+    assert by_keyword["items"][0]["title"] == "Passionnee de musique"
+
+    by_description_keyword = client.get("/ads", params={"q": "films"}).json()
+    assert by_description_keyword["total"] == 1
+    assert by_description_keyword["items"][0]["title"] == "Amateur de cinema"
+
+    by_city = client.get("/ads", params={"city": "ouaga"}).json()
+    assert by_city["total"] == 1
+    assert by_city["items"][0]["city"] == "Ouagadougou"
+
+    by_gender = client.get("/ads", params={"gender": "femme"}).json()
+    assert by_gender["total"] == 1
+    assert by_gender["items"][0]["owner"]["gender"] == "femme"
+
+    no_match = client.get("/ads", params={"q": "voyage"}).json()
+    assert no_match["total"] == 0
+
+    combined = client.get("/ads", params={"gender": "homme", "city": "ouaga"}).json()
+    assert combined["total"] == 1
+
+
 def test_ad_not_public_until_paid(client, register_user, publish_ad):
     headers = register_user(email="alice@example.com", full_name="Alice Kone")
     ad = client.post(

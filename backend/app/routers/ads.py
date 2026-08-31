@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Ad, AdStatus, User
+from app.models import Ad, AdStatus, Gender, User
 from app.schemas import AdCreate, AdMine, AdPage, AdPublic
 
 router = APIRouter(prefix="/ads", tags=["ads"])
@@ -16,10 +16,15 @@ router = APIRouter(prefix="/ads", tags=["ads"])
 def list_ads(
     page: int = Query(1, ge=1),
     page_size: int = Query(12, ge=1, le=48),
+    q: str | None = Query(None, description="Recherche dans le titre et la description"),
+    city: str | None = Query(None, description="Filtre par ville"),
+    gender: Gender | None = Query(None, description="Filtre par genre de l'auteur de l'annonce"),
     db: Session = Depends(get_db),
 ):
     """Public browsing, paginated: only published ads, never with contact info."""
-    ads, total = crud.get_published_ads_page(db, offset=(page - 1) * page_size, limit=page_size)
+    ads, total = crud.get_published_ads_page(
+        db, offset=(page - 1) * page_size, limit=page_size, q=q, city=city, gender=gender
+    )
     requested_ad_ids = crud.ad_ids_with_requests(db, [ad.id for ad in ads])
     return AdPage(
         items=[AdPublic.from_ad(ad, is_new=ad.id not in requested_ad_ids) for ad in ads],

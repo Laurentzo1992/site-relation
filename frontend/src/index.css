@@ -805,6 +805,30 @@ button:focus-visible, .btn:focus-visible, a:focus-visible, input:focus-visible, 
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
 
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 0.6rem 0 1.6rem;
+}
+
+.search-bar input[type="search"] {
+  flex: 2 1 220px;
+}
+
+.search-bar input[type="text"] {
+  flex: 1 1 140px;
+}
+
+.search-bar select {
+  flex: 1 1 140px;
+}
+
+.search-bar .btn-outline {
+  flex: 0 0 auto;
+  padding: 0.6rem 1rem;
+}
+
 .form-card {
   max-width: 480px;
   margin: 2rem auto;

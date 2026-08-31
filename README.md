@@ -1,5 +1,7 @@
 # Trouver votre Amour
 
+[![CI/CD](https://github.com/Laurentzo1992/site-relation/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Laurentzo1992/site-relation/actions/workflows/ci-cd.yml)
+
 Site de rencontre avec annonces payantes et mises en relation validees par un
 administrateur, sans jamais exposer publiquement les coordonnees des membres.
 
@@ -7,6 +9,9 @@ administrateur, sans jamais exposer publiquement les coordonnees des membres.
 - **Administration** : [SQLAdmin](https://aminalaee.dev/sqladmin/) sur `/admin`
 - **Frontend** : React (Vite), design anime, annonces paginees
 - **Paiements** : [LigdiCash](https://developers.ligdicash.com/) (ou mock pour le dev local)
+
+Pour deployer en production (VPS + Docker Compose + HTTPS automatique), voir
+**[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ## Fonctionnement
 

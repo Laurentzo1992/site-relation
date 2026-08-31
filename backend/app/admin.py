@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqladmin import Admin, ModelView, action
 from sqladmin.authentication import AuthenticationBackend
@@ -105,7 +105,9 @@ class ConnectionRequestAdmin(ModelView, model=ConnectionRequest):
     @action(
         name="approve",
         label="Approuver la mise en relation",
-        confirmation_message="Confirmer la validation de ces demandes ? Les coordonnees seront reveleees aux deux parties.",
+        confirmation_message=(
+            "Confirmer la validation de ces demandes ? Les coordonnees seront reveleees aux deux parties."
+        ),
         add_in_detail=True,
         add_in_list=True,
     )
@@ -137,7 +139,7 @@ class ConnectionRequestAdmin(ModelView, model=ConnectionRequest):
                 if req is None or req.status != ConnectionStatus.pending_admin:
                     continue
                 req.status = new_status
-                req.decided_at = datetime.now(timezone.utc)
+                req.decided_at = datetime.now(UTC)
                 req.decided_by_id = admin_user.id if admin_user else None
             db.commit()
         finally:

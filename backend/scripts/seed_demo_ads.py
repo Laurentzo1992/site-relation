@@ -8,7 +8,7 @@ Usage (run from the backend/ directory, or inside the backend container):
 
 import random
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -112,7 +112,7 @@ def build_ad(db, owner: User) -> Ad:
         status=PaymentStatus.success,
         provider="mock",
         provider_reference=f"SEED-{ad.id}",
-        confirmed_at=datetime.now(timezone.utc),
+        confirmed_at=datetime.now(UTC),
     )
     db.add(payment)
     return ad

@@ -1,0 +1,127 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Run tests
+        env:
+          DATABASE_URL: sqlite:///./test.db
+          SECRET_KEY: ci-test-secret
+          ADMIN_SESSION_SECRET: ci-test-admin-secret
+          PAYMENT_PROVIDER: mock
+        run: pytest -v
+
+  migrations-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: siterelation
+          POSTGRES_PASSWORD: siterelation
+          POSTGRES_DB: siterelation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U siterelation"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Apply Alembic migrations against a real Postgres
+        env:
+          DATABASE_URL: postgresql+psycopg2://siterelation:siterelation@localhost:5432/siterelation
+        run: alembic upgrade head
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, migrations-check, frontend-build]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -t site-relation-backend:ci ./backend
+      - name: Build frontend image
+        run: docker build -t site-relation-frontend:ci ./frontend
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Check deploy secrets are configured
+        id: check
+        run: |
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY/DEPLOY_PATH secrets are not set yet -- skipping deploy. See DEPLOYMENT.md."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy over SSH
+        if: steps.check.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            docker compose -f docker-compose.prod.yml up --build -d
+            docker image prune -f
+      - name: Verify deployment
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          sleep 5
+          curl -fsS https://api.vie-heureux.blog/health
+          curl -fsS -o /dev/null https://vie-heureux.blog

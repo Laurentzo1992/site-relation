@@ -22,7 +22,7 @@ Two providers are supported, selected via settings.payment_provider:
     left untouched.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -119,7 +119,7 @@ def confirm_payment(db: Session, user: User, payment_id: int) -> Payment:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ce paiement a deja ete traite")
 
     payment.status = PaymentStatus.success
-    payment.confirmed_at = datetime.now(timezone.utc)
+    payment.confirmed_at = datetime.now(UTC)
     payment.provider_reference = f"MOCK-{payment.id}"
 
     _apply_payment_side_effects(db, payment)
@@ -200,7 +200,7 @@ def _apply_ligdicash_result(db: Session, payment: Payment, data: dict) -> None:
 
     if ligdicash_status == "completed":
         payment.status = PaymentStatus.success
-        payment.confirmed_at = datetime.now(timezone.utc)
+        payment.confirmed_at = datetime.now(UTC)
         _apply_payment_side_effects(db, payment)
     elif ligdicash_status == "notcompleted":
         payment.status = PaymentStatus.failed

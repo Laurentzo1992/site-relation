@@ -3,6 +3,7 @@ backend/.venv/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/.env
+backend/.env.production
 backend/*.db
 
 # Frontend
@@ -10,6 +11,12 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 
+# Production / deployment secrets
+.env
+.env.production
+backups/
+
 # Editors / OS
 .DS_Store
 .vscode/
+.claude/

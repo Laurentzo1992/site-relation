@@ -16,6 +16,7 @@ services:
 
   backend:
     build: ./backend
+    container_name: siterelation-backend
     restart: unless-stopped
     env_file:
       - ./backend/.env.production
@@ -27,33 +28,32 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - edge
 
   frontend:
     build:
       context: ./frontend
       args:
         VITE_API_URL: https://api.${DOMAIN}
+    container_name: siterelation-frontend
     restart: unless-stopped
     depends_on:
       - backend
+    networks:
+      - edge
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    env_file:
-      - .env
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - backend
-      - frontend
+# No "caddy" service here and no host ports on backend/frontend: this
+# project's containers don't own 80/443 themselves. They join the "edge"
+# network (an existing external network your VPS's own Caddy is already on)
+# so that Caddy can reverse_proxy to them by container name -- see
+# Caddyfile in this repo for the exact site blocks to add to your existing
+# Caddyfile, and DEPLOYMENT.md for how to find your Caddy's network name.
+networks:
+  edge:
+    external: true
+    name: ${CADDY_NETWORK}
 
 volumes:
   db_data:
-  caddy_data:
-  caddy_config:

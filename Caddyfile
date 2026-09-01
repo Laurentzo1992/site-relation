@@ -1,23 +1,20 @@
-{
-	email {$ACME_EMAIL}
-}
+# NOT run standalone in this deployment -- your VPS already runs a shared
+# Caddy container for other sites, which owns ports 80/443. Add the two
+# site blocks below to THAT Caddy's own Caddyfile (do not add another
+# top-level `{ ... }` global options block if one already exists there).
+#
+# For this to resolve, the "siterelation-backend" / "siterelation-frontend"
+# containers (see docker-compose.prod.yml) must be on the same Docker
+# network as your existing Caddy container -- that network's name goes in
+# CADDY_NETWORK in the root .env. See DEPLOYMENT.md for how to find it and
+# how to reload your existing Caddy after adding these blocks.
 
-(security_headers) {
-	header {
-		X-Content-Type-Options nosniff
-		X-Frame-Options SAMEORIGIN
-		Referrer-Policy strict-origin-when-cross-origin
-	}
-}
-
-{$DOMAIN} {
-	import security_headers
-	reverse_proxy frontend:80
+my-love.logo-services.com {
+	reverse_proxy siterelation-frontend:80
 	encode gzip
 }
 
-api.{$DOMAIN} {
-	import security_headers
-	reverse_proxy backend:8000
+api.my-love.logo-services.com {
+	reverse_proxy siterelation-backend:8000
 	encode gzip
 }

@@ -89,12 +89,10 @@ export default function AdsList() {
           <div className="hero-badges">
             <span>🔒 Coordonnees protegees</span>
             <span>✅ Mise en relation validee</span>
-            <span>💳 Paiement securise</span>
           </div>
           <p className="hero-price-note">
             💝 Pour {AD_PRICE} {CURRENCY} seulement, offrez une vraie chance a votre coeur — un petit
-            geste qui garde notre communaute sincere et engagee, et qui pourrait bien changer votre
-            vie.
+            geste qui garde notre communaute sincere et engagee.
           </p>
         </div>
         <div className="date-scene-wrap">

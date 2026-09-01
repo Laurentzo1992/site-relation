@@ -436,8 +436,8 @@ p {
   position: relative;
   overflow: hidden;
   text-align: center;
-  padding: 3.5rem 1.5rem 3rem;
-  margin: -2rem -1.5rem 2.5rem;
+  padding: 4rem 1.5rem 3.5rem;
+  margin: -2rem -1.5rem 3rem;
   border-radius: 0 0 32px 32px;
   background: linear-gradient(180deg, var(--rose-50) 0%, var(--bg) 100%);
 }
@@ -529,14 +529,14 @@ p {
 }
 
 .hero-price-note {
-  max-width: 480px;
-  margin: 1.4rem auto 0;
-  padding: 0.8rem 1.2rem;
+  max-width: 440px;
+  margin: 1.8rem auto 0;
+  padding: 0.75rem 1.2rem;
   background: var(--rose-100);
-  border-radius: 16px;
-  font-size: 0.88rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
   color: var(--plum-700);
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 /* Animated couple-on-a-bench illustration (see DateScene.jsx) */
@@ -819,8 +819,14 @@ button:focus-visible, .btn:focus-visible, a:focus-visible, input:focus-visible, 
 .search-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
-  margin: 0.6rem 0 1.6rem;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1.6rem 0 2.2rem;
+  padding: 1rem 1.1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .search-bar input[type="search"] {
@@ -838,6 +844,24 @@ button:focus-visible, .btn:focus-visible, a:focus-visible, input:focus-visible, 
 .search-bar .btn-outline {
   flex: 0 0 auto;
   padding: 0.6rem 1rem;
+}
+
+@media (max-width: 640px) {
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Same selectors (and specificity) as the desktop rules above so this
+     override actually wins the cascade instead of losing to e.g.
+     `input[type="search"]`'s higher specificity. */
+  .search-bar input[type="search"],
+  .search-bar input[type="text"],
+  .search-bar select,
+  .search-bar .btn-outline {
+    flex: 0 0 auto;
+    width: 100%;
+  }
 }
 
 .form-card {

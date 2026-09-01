@@ -11,7 +11,6 @@ from app.database import Base
 class Gender(str, enum.Enum):
     homme = "homme"
     femme = "femme"
-    autre = "autre"
 
 
 class AdStatus(str, enum.Enum):

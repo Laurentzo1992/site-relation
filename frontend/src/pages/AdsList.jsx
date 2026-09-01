@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { listAds } from "../api/ads";
 import { useAuth } from "../context/AuthContext";
 import DateScene from "../components/DateScene";
-import { ADS_PAGE_SIZE, SELECTABLE_GENDERS } from "../constants";
+import { AD_PRICE, ADS_PAGE_SIZE, CURRENCY, SELECTABLE_GENDERS } from "../constants";
 
 function buildPageList(current, totalPages) {
   const pages = new Set([1, totalPages, current, current - 1, current + 1]);
@@ -91,6 +91,11 @@ export default function AdsList() {
             <span>✅ Mise en relation validee</span>
             <span>💳 Paiement securise</span>
           </div>
+          <p className="hero-price-note">
+            💝 Pour {AD_PRICE} {CURRENCY} seulement, offrez une vraie chance a votre coeur — un petit
+            geste qui garde notre communaute sincere et engagee, et qui pourrait bien changer votre
+            vie.
+          </p>
         </div>
         <div className="date-scene-wrap">
           <DateScene />

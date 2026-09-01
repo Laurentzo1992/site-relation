@@ -3,11 +3,9 @@ export const CONNECTION_REQUEST_PRICE = 500;
 export const CURRENCY = "XOF";
 export const ADS_PAGE_SIZE = 12;
 
-// Single source of truth for selectable genders in the UI. The backend
-// Gender enum also has "autre" (kept for backward compatibility with any
-// pre-existing data), but it's intentionally not offered as a choice here --
-// every gender <select> in the app should import this instead of hardcoding
-// its own option list.
+// Single source of truth for selectable genders in the UI (matches the
+// backend Gender enum exactly). Every gender <select> in the app should
+// import this instead of hardcoding its own option list.
 export const SELECTABLE_GENDERS = [
   { value: "homme", label: "Homme" },
   { value: "femme", label: "Femme" },

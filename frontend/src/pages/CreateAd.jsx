@@ -78,7 +78,6 @@ export default function CreateAd() {
           <select value={form.looking_for_gender} onChange={update("looking_for_gender")}>
             <option value="homme">Homme</option>
             <option value="femme">Femme</option>
-            <option value="autre">Autre</option>
           </select>
         </label>
         <div className="row">

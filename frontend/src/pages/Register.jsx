@@ -87,7 +87,6 @@ export default function Register() {
             <select value={form.gender} onChange={update("gender")}>
               <option value="homme">Homme</option>
               <option value="femme">Femme</option>
-              <option value="autre">Autre</option>
             </select>
           </label>
           <label>

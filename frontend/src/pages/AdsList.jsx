@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { listAds } from "../api/ads";
 import { useAuth } from "../context/AuthContext";
 import DateScene from "../components/DateScene";
-import { ADS_PAGE_SIZE } from "../constants";
+import { ADS_PAGE_SIZE, SELECTABLE_GENDERS } from "../constants";
 
 function buildPageList(current, totalPages) {
   const pages = new Set([1, totalPages, current, current - 1, current + 1]);
@@ -12,7 +12,6 @@ function buildPageList(current, totalPages) {
     .sort((a, b) => a - b);
 }
 
-const EMPTY_SEARCH = { q: "", city: "" };
 const EMPTY_FILTERS = { q: "", city: "", gender: "" };
 
 export default function AdsList() {
@@ -22,40 +21,45 @@ export default function AdsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [searchInput, setSearchInput] = useState(EMPTY_SEARCH);
-  const [gender, setGender] = useState("");
+  // `input` mirrors the filter controls as the user types/selects; `filters`
+  // is the debounced value actually sent to the API. Debouncing the gender
+  // select too (not just free text) is harmless and keeps this to a single
+  // effect instead of one-effect-per-field.
+  const [input, setInput] = useState(EMPTY_FILTERS);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
-  // Debounce free-text search / city so we don't fire a request per keystroke.
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters((f) => ({ ...f, q: searchInput.q, city: searchInput.city }));
+      // Setting to `input` itself (not a fresh copy) means this is a no-op
+      // when nothing actually changed -- React bails out on a same-reference
+      // update, so mounting doesn't trigger a redundant extra fetch.
+      setFilters(input);
       setPage(1);
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [input]);
 
   useEffect(() => {
-    setFilters((f) => ({ ...f, gender }));
-    setPage(1);
-  }, [gender]);
-
-  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setError("");
-    listAds({ page, pageSize: ADS_PAGE_SIZE, ...filters })
-      .then((res) => setData(res.data))
-      .catch(() => setError("Impossible de charger les annonces pour le moment."))
-      .finally(() => setLoading(false));
+    listAds({ page, pageSize: ADS_PAGE_SIZE, ...filters }, { signal: controller.signal })
+      .then((res) => {
+        setData(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (err.code === "ERR_CANCELED") return; // superseded by a newer request
+        setError("Impossible de charger les annonces pour le moment.");
+        setLoading(false);
+      });
     window.scrollTo({ top: 0, behavior: "smooth" });
+    return () => controller.abort();
   }, [page, filters]);
 
   const hasActiveFilters = filters.q || filters.city || filters.gender;
 
-  const clearFilters = () => {
-    setSearchInput(EMPTY_SEARCH);
-    setGender("");
-  };
+  const clearFilters = () => setInput(EMPTY_FILTERS);
 
   const totalPages = data?.total_pages ?? 1;
   const pageList = buildPageList(page, totalPages);
@@ -99,21 +103,28 @@ export default function AdsList() {
         <input
           type="search"
           placeholder="Rechercher une annonce..."
-          value={searchInput.q}
-          onChange={(e) => setSearchInput((s) => ({ ...s, q: e.target.value }))}
+          value={input.q}
+          onChange={(e) => setInput((i) => ({ ...i, q: e.target.value }))}
           aria-label="Rechercher une annonce"
         />
         <input
           type="text"
           placeholder="Ville"
-          value={searchInput.city}
-          onChange={(e) => setSearchInput((s) => ({ ...s, city: e.target.value }))}
+          value={input.city}
+          onChange={(e) => setInput((i) => ({ ...i, city: e.target.value }))}
           aria-label="Filtrer par ville"
         />
-        <select value={gender} onChange={(e) => setGender(e.target.value)} aria-label="Filtrer par genre">
+        <select
+          value={input.gender}
+          onChange={(e) => setInput((i) => ({ ...i, gender: e.target.value }))}
+          aria-label="Filtrer par genre"
+        >
           <option value="">Tous les genres</option>
-          <option value="homme">Homme</option>
-          <option value="femme">Femme</option>
+          {SELECTABLE_GENDERS.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
         </select>
         {hasActiveFilters && (
           <button type="button" className="btn-outline" onClick={clearFilters}>

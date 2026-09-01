@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createAd } from "../api/ads";
 import PaymentBox from "../components/PaymentBox";
-import { AD_PRICE, CURRENCY } from "../constants";
+import { AD_PRICE, CURRENCY, SELECTABLE_GENDERS } from "../constants";
 
 export default function CreateAd() {
   const navigate = useNavigate();
@@ -76,8 +76,11 @@ export default function CreateAd() {
         <label>
           Je recherche
           <select value={form.looking_for_gender} onChange={update("looking_for_gender")}>
-            <option value="homme">Homme</option>
-            <option value="femme">Femme</option>
+            {SELECTABLE_GENDERS.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
+              </option>
+            ))}
           </select>
         </label>
         <div className="row">

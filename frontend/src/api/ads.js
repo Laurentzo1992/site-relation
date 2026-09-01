@@ -1,7 +1,8 @@
 import client from "./client";
 
-export function listAds({ page, pageSize, q, city, gender }) {
+export function listAds({ page, pageSize, q, city, gender }, config = {}) {
   return client.get("/ads", {
+    ...config,
     params: {
       page,
       page_size: pageSize,

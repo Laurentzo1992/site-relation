@@ -33,7 +33,7 @@ def main() -> None:
                 hashed_password=hash_password(password),
                 full_name=full_name,
                 phone=phone,
-                gender=Gender.autre,
+                gender=Gender.homme,
                 is_admin=True,
             )
             db.add(user)

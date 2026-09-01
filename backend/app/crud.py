@@ -4,7 +4,7 @@ serialization; business logic that has side effects beyond a single query
 (payments, LigdiCash) stays in its own dedicated module instead."""
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, contains_eager, joinedload
 
 from app.models import Ad, AdStatus, ConnectionRequest, ConnectionStatus, Gender, User
 
@@ -32,7 +32,10 @@ def get_published_ads_page(
     """`q` searches title + description (case-insensitive substring). `city`
     matches the ad's city (case-insensitive substring). `gender` filters on
     the ad owner's gender."""
-    query = db.query(Ad).join(User, Ad.owner_id == User.id).options(joinedload(Ad.owner))
+    # contains_eager (not joinedload) tells SQLAlchemy to populate ad.owner
+    # from this same join instead of adding a second, redundant join to
+    # `users` just for eager-loading.
+    query = db.query(Ad).join(User, Ad.owner_id == User.id).options(contains_eager(Ad.owner))
     query = query.filter(Ad.status == AdStatus.published)
 
     if q:

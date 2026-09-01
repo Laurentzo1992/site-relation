@@ -4,6 +4,7 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { useAuth } from "../context/AuthContext";
 import { detectCountryFromIp } from "../api/geo";
+import { SELECTABLE_GENDERS } from "../constants";
 
 export default function Register() {
   const { register } = useAuth();
@@ -85,8 +86,11 @@ export default function Register() {
           <label>
             Genre
             <select value={form.gender} onChange={update("gender")}>
-              <option value="homme">Homme</option>
-              <option value="femme">Femme</option>
+              {SELECTABLE_GENDERS.map((g) => (
+                <option key={g.value} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
             </select>
           </label>
           <label>

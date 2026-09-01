@@ -123,5 +123,5 @@ jobs:
         if: steps.check.outputs.configured == 'true'
         run: |
           sleep 5
-          curl -fsS https://api.vie-heureux.blog/health
-          curl -fsS -o /dev/null https://vie-heureux.blog
+          curl -fsS https://api.my-love.logo-services.com/health
+          curl -fsS -o /dev/null https://my-love.logo-services.com

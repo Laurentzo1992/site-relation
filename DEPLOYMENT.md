@@ -1,9 +1,9 @@
-# Deploiement en production — vie-heureux.blog
+# Deploiement en production — my-love.logo-services.com
 
 Stack : un VPS (Ubuntu/Debian recommande) avec Docker Compose, et
 [Caddy](https://caddyserver.com/) comme reverse proxy pour le HTTPS
-automatique (Let's Encrypt). Le frontend est servi sur `vie-heureux.blog`,
-l'API et l'admin SQLAdmin sur `api.vie-heureux.blog`.
+automatique (Let's Encrypt). Le frontend est servi sur `my-love.logo-services.com`,
+l'API et l'admin SQLAdmin sur `api.my-love.logo-services.com`.
 
 ## 1. Prerequis
 
@@ -12,11 +12,11 @@ l'API et l'admin SQLAdmin sur `api.vie-heureux.blog`.
   ```bash
   curl -fsSL https://get.docker.com | sh
   ```
-- Le nom de domaine `vie-heureux.blog` avec deux enregistrements DNS **A**
+- Le nom de domaine `my-love.logo-services.com` avec deux enregistrements DNS **A**
   pointant vers l'IP du serveur :
   ```
-  vie-heureux.blog       A   <IP_DU_SERVEUR>
-  api.vie-heureux.blog   A   <IP_DU_SERVEUR>
+  my-love.logo-services.com       A   <IP_DU_SERVEUR>
+  api.my-love.logo-services.com   A   <IP_DU_SERVEUR>
   ```
   (chez ton registrar/DNS — attends quelques minutes a quelques heures pour
   la propagation avant de lancer le deploiement, sinon Let's Encrypt ne
@@ -48,7 +48,7 @@ cp .env.production.example .env
 Edite `.env` :
 
 ```bash
-DOMAIN=vie-heureux.blog
+DOMAIN=my-love.logo-services.com
 ACME_EMAIL=ton-email@example.com     # utilise par Let's Encrypt pour les alertes de renouvellement
 POSTGRES_USER=siterelation
 POSTGRES_PASSWORD=<genere un mot de passe fort>
@@ -105,18 +105,18 @@ Verifie que tout tourne :
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
-curl -I https://vie-heureux.blog
-curl -I https://api.vie-heureux.blog/health
+curl -I https://my-love.logo-services.com
+curl -I https://api.my-love.logo-services.com/health
 ```
 
 ## 5. Creer le premier compte administrateur
 
 ```bash
 docker compose -f docker-compose.prod.yml exec backend \
-  python scripts/create_admin.py admin@vie-heureux.blog "UnMotDePasseFort123" "Admin" "+2250000000"
+  python scripts/create_admin.py admin@my-love.logo-services.com "UnMotDePasseFort123" "Admin" "+2250000000"
 ```
 
-L'admin est accessible sur `https://api.vie-heureux.blog/admin`.
+L'admin est accessible sur `https://api.my-love.logo-services.com/admin`.
 
 ## 6. Activer les paiements LigdiCash reels
 
@@ -131,7 +131,7 @@ Une fois les identifiants LigdiCash obtenus :
    ```
 
 Comme le site est maintenant sur un vrai domaine HTTPS public, le webhook
-LigdiCash (`https://api.vie-heureux.blog/payments/ligdicash/callback`) est
+LigdiCash (`https://api.my-love.logo-services.com/payments/ligdicash/callback`) est
 joignable directement — contrairement au test en local, plus besoin du
 mecanisme de secours par sondage cote frontend (qui reste actif en filet de
 securite).
@@ -237,8 +237,8 @@ Internet
    │
    ▼
  Caddy (80/443, HTTPS automatique)
-   ├── vie-heureux.blog      → frontend (nginx + build React)
-   └── api.vie-heureux.blog  → backend (FastAPI + SQLAdmin)
+   ├── my-love.logo-services.com      → frontend (nginx + build React)
+   └── api.my-love.logo-services.com  → backend (FastAPI + SQLAdmin)
                                     │
                                     ▼
                               PostgreSQL (volume Docker persistant)

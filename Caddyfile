@@ -1,20 +1,27 @@
-# NOT run standalone in this deployment -- your VPS already runs a shared
-# Caddy container for other sites, which owns ports 80/443. Add the two
-# site blocks below to THAT Caddy's own Caddyfile (do not add another
-# top-level `{ ... }` global options block if one already exists there).
+# NOT run standalone in this deployment -- the VPS already runs a shared
+# Caddy (in /opt/caddy) which owns ports 80/443 and imports every
+# /opt/caddy/sites/*.caddy file. Save the blocks below as
+# /opt/caddy/sites/site-relation.caddy (do not add a top-level `{ ... }`
+# global options block there).
 #
 # For this to resolve, the "siterelation-backend" / "siterelation-frontend"
 # containers (see docker-compose.prod.yml) must be on the same Docker
-# network as your existing Caddy container -- that network's name goes in
-# CADDY_NETWORK in the root .env. See DEPLOYMENT.md for how to find it and
-# how to reload your existing Caddy after adding these blocks.
+# network as that Caddy (the "proxy" network) -- that network's name goes in
+# CADDY_NETWORK in the root .env. See DEPLOYMENT.md for the full steps and
+# how to reload Caddy after adding this file.
 
-my-love.logo-services.com {
+njarabi.info {
+	encode zstd gzip
 	reverse_proxy siterelation-frontend:80
-	encode gzip
 }
 
-api.my-love.logo-services.com {
+# The backend's CORS only allows https://njarabi.info, so www must redirect
+# rather than serve the app itself.
+www.njarabi.info {
+	redir https://njarabi.info{uri} permanent
+}
+
+api.njarabi.info {
+	encode zstd gzip
 	reverse_proxy siterelation-backend:8000
-	encode gzip
 }

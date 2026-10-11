@@ -1,4 +1,4 @@
-"""Create (or promote) an admin user.
+"""Create (or promote) an admin user. For an existing user, also resets the password.
 
 Usage (run from the backend/ directory):
     python scripts/create_admin.py admin@example.com "MotDePasse123" "Admin Site" "+2250000000"
@@ -26,7 +26,9 @@ def main() -> None:
         user = db.query(User).filter(User.email == email).first()
         if user:
             user.is_admin = True
-            print(f"Utilisateur existant '{email}' promu administrateur.")
+            user.is_active = True
+            user.hashed_password = hash_password(password)
+            print(f"Utilisateur existant '{email}' promu administrateur (mot de passe mis a jour).")
         else:
             user = User(
                 email=email,

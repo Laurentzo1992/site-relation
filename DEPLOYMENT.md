@@ -224,45 +224,53 @@ troisieme affiche `{"status":"ok"}`. (N'utilise pas `curl -I` sur `/health` :
 ```
 cd /opt/site-relation
 docker compose -f docker-compose.prod.yml exec backend \
-  python scripts/create_admin.py admin@njarabi.info "UnMotDePasseFort123" "Admin" "+2250000000"
+  python scripts/create_admin.py admin@njarabi.info "SiteAdmin@2026" "Admin" "+2250000000"
 ```
 
 Remplace le mot de passe par un vrai. L'admin est accessible sur
 `https://api.njarabi.info/admin`.
 
-## 8. Activer les paiements LigdiCash reels
+## 8. Activer les paiements reels (LigdiCash et/ou SebPay)
 
-Une fois les identifiants LigdiCash obtenus :
+`PAYMENT_PROVIDER` accepte un ou plusieurs moyens separes par des virgules :
+`mock` (simule), `ligdicash`, `sebpay`. Le premier est celui par defaut, et
+quand il y en a plusieurs le membre choisit au moment de payer.
 
-1. Renseigne `LIGDICASH_API_KEY` et `LIGDICASH_AUTH_TOKEN` dans
-   `backend/.env.production`.
-2. Passe `PAYMENT_PROVIDER=ligdicash`.
-3. Redeploie juste le backend :
-   ```
-   docker compose -f docker-compose.prod.yml up -d --build backend
-   ```
+Dans `backend/.env.production` :
 
-Le webhook LigdiCash est `https://api.njarabi.info/payments/ligdicash/callback`.
-Comme le site est sur un vrai domaine HTTPS public, il est joignable
-directement (le sondage cote frontend reste actif en filet de securite).
-
-## 9. Reprendre les donnees d'un ancien serveur (optionnel)
-
-Si le site tournait deja ailleurs et que tu veux garder utilisateurs et
-annonces, fais-le **avant** de changer le DNS.
-
-Sur l'**ancien** serveur :
 ```
-docker compose -f docker-compose.prod.yml exec -T db pg_dump -U siterelation siterelation | gzip > dump.sql.gz
+PAYMENT_PROVIDER=ligdicash,sebpay
+
+LIGDICASH_API_KEY=...
+LIGDICASH_AUTH_TOKEN=...
+
+SEBPAY_PUBLIC_KEY=pk_...
+SEBPAY_SECRET_KEY=sk_...
 ```
 
-Copie `dump.sql.gz` vers le nouveau serveur (`scp`), puis sur le **nouveau**,
-apres l'etape 5 :
+Pour SebPay, commence avec la paire `pk_test_` / `sk_test_` de ton espace
+SebPay et fais un paiement d'essai, puis passe a `pk_live_` / `sk_live_`.
+La cle secrete ne doit jamais etre commitee ni partagee (ni dans le code, ni
+dans un chat, ni sur une capture d'ecran) ; si elle a fuite, regenere-la
+depuis ton espace SebPay.
+
+Redeploie juste le backend :
 ```
-gunzip -c dump.sql.gz | docker compose -f docker-compose.prod.yml exec -T db psql -U siterelation siterelation
+docker compose -f docker-compose.prod.yml up -d --build backend
 ```
 
-## 10. Sauvegardes de la base de donnees
+Webhooks (joignables directement car le site est sur un vrai domaine HTTPS) :
+- LigdiCash : `https://api.njarabi.info/payments/ligdicash/callback`
+- SebPay : `https://api.njarabi.info/payments/sebpay/callback` (transmis
+  automatiquement a chaque paiement, rien a configurer chez SebPay ; la
+  signature `X-SebPay-Signature` est verifiee avec la cle secrete)
+
+Dans les deux cas le site ne se fie jamais au contenu du webhook : il
+re-interroge le fournisseur pour confirmer le paiement, et le sondage cote
+frontend reste actif en filet de securite.
+
+
+## 09. Sauvegardes de la base de donnees
 
 Un script est fourni :
 ```
@@ -282,7 +290,7 @@ scp -r <utilisateur>@<IP_DU_SERVEUR>:/opt/site-relation/backups .
 Un dump qui reste uniquement sur le serveur qui tombe en panne ne sert a
 rien.
 
-## 11. Deploiement automatique (CI/CD, GitHub Actions)
+## 10. Deploiement automatique (CI/CD, GitHub Actions)
 
 Le pipeline [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml)
 tourne sur chaque push :

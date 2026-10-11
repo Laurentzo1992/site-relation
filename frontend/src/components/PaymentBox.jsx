@@ -1,32 +1,61 @@
-import { useState } from "react";
-import { confirmPayment, initiatePayment } from "../api/payments";
+import { useEffect, useState } from "react";
+import { confirmPayment, getPaymentOptions, initiatePayment, paymentErrorMessage } from "../api/payments";
+import SebPayForm from "./payment/SebPayForm";
+
+const PROVIDER_LABELS = {
+  ligdicash: "LigdiCash",
+  sebpay: "Mobile Money (SebPay)",
+  mock: "Paiement de test",
+};
 
 /**
- * Initiates a payment for the given (type, referenceId).
+ * Pays for the given (type, referenceId) with one of the providers the
+ * backend has enabled (GET /payments/options); when several are, the member
+ * picks one.
  *
- * - If the backend responds with a checkout_url (real LigdiCash payment),
- *   the browser is redirected there; LigdiCash later sends the user back to
- *   /payments/:id/return (see PaymentReturn.jsx) once they've paid.
- * - Otherwise (mock provider, local dev) a "simulate" button lets the
- *   frontend confirm the payment itself, for testing without real money.
+ * - LigdiCash: the browser is redirected to its checkout_url and LigdiCash
+ *   later sends the user back to /payments/:id/return (see PaymentReturn.jsx).
+ * - SebPay: a direct Mobile Money debit handled inline (see SebPayForm.jsx).
+ * - Mock (local dev): a "simulate" button confirms the payment itself, for
+ *   testing without real money.
  */
 export default function PaymentBox({ type, referenceId, amount, currency, onPaid }) {
+  const [providers, setProviders] = useState([]);
+  const [provider, setProvider] = useState(null);
   const [payment, setPayment] = useState(null);
+  const [paid, setPaid] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    getPaymentOptions()
+      .then((res) => {
+        setProviders(res.data.providers);
+        setProvider(res.data.default);
+      })
+      .catch(() => {
+        // Options unreachable: let the backend pick its default provider.
+        setProvider("default");
+      });
+  }, []);
+
+  const succeeded = (result) => {
+    setPaid(result);
+    onPaid?.(result);
+  };
 
   const initiate = async () => {
     setBusy(true);
     setError("");
     try {
-      const res = await initiatePayment(type, referenceId);
+      const res = await initiatePayment(type, referenceId, provider === "default" ? {} : { provider });
       if (res.data.checkout_url) {
         window.location.href = res.data.checkout_url;
         return;
       }
       setPayment(res.data);
     } catch (err) {
-      setError(err.response?.data?.detail || "Erreur lors de l'initialisation du paiement");
+      setError(paymentErrorMessage(err, "Erreur lors de l'initialisation du paiement"));
     } finally {
       setBusy(false);
     }
@@ -38,19 +67,28 @@ export default function PaymentBox({ type, referenceId, amount, currency, onPaid
     try {
       const res = await confirmPayment(payment.id);
       setPayment(res.data);
-      onPaid?.(res.data);
+      succeeded(res.data);
     } catch (err) {
-      setError(err.response?.data?.detail || "Erreur lors de la confirmation du paiement");
+      setError(paymentErrorMessage(err, "Erreur lors de la confirmation du paiement"));
     } finally {
       setBusy(false);
     }
   };
 
-  if (payment?.status === "success") {
+  const done = paid ?? (payment?.status === "success" ? payment : null);
+  if (done) {
     return (
       <p className="payment-box success">
-        <span className="payment-check">✓</span> Paiement confirme ({payment.amount} {payment.currency}).
+        <span className="payment-check">✓</span> Paiement confirme ({done.amount} {done.currency}).
       </p>
+    );
+  }
+
+  if (provider === null) {
+    return (
+      <div className="payment-box">
+        <div className="spinner" />
+      </div>
     );
   }
 
@@ -59,15 +97,47 @@ export default function PaymentBox({ type, referenceId, amount, currency, onPaid
       <p className="payment-amount">
         Frais requis : <strong>{amount} {currency}</strong>
       </p>
-      {error && <p className="error">{error}</p>}
-      {!payment ? (
-        <button className="btn-pay" disabled={busy} onClick={initiate}>
-          {busy ? "Redirection..." : `Payer ${amount} ${currency}`}
-        </button>
+
+      {providers.length > 1 && !payment && (
+        <div className="payment-providers" role="radiogroup" aria-label="Moyen de paiement">
+          {providers.map((p) => (
+            <label key={p} className={`payment-provider${p === provider ? " selected" : ""}`}>
+              <input
+                type="radio"
+                name={`provider-${type}-${referenceId}`}
+                checked={p === provider}
+                onChange={() => {
+                  setProvider(p);
+                  setError("");
+                }}
+              />
+              {PROVIDER_LABELS[p] ?? p}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {provider === "sebpay" ? (
+        <SebPayForm
+          type={type}
+          referenceId={referenceId}
+          amount={amount}
+          currency={currency}
+          onSuccess={succeeded}
+        />
       ) : (
-        <button className="btn-pay" disabled={busy} onClick={confirm}>
-          Simuler la confirmation du paiement
-        </button>
+        <>
+          {error && <p className="error">{error}</p>}
+          {!payment ? (
+            <button className="btn-pay" disabled={busy} onClick={initiate}>
+              {busy ? "Redirection..." : `Payer ${amount} ${currency}`}
+            </button>
+          ) : (
+            <button className="btn-pay" disabled={busy} onClick={confirm}>
+              Simuler la confirmation du paiement
+            </button>
+          )}
+        </>
       )}
     </div>
   );

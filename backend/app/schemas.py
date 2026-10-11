@@ -1,8 +1,8 @@
 import re
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models import AdStatus, ConnectionStatus, Gender, PaymentStatus, PaymentType
 
@@ -263,6 +263,26 @@ class ContactInfo(BaseModel):
 class PaymentInitiate(BaseModel):
     type: PaymentType
     reference_id: int
+    # Which of the enabled providers to use; omitted = the default one.
+    provider: Literal["mock", "ligdicash", "sebpay"] | None = None
+    # Mobile Money details, only used (and then required) for "sebpay".
+    # `phone` is the number to debit -- unrelated to the profile's private contact.
+    phone: str | None = Field(default=None, pattern=r"^\+?[1-9]\d{7,14}$")
+    country: str | None = Field(default=None, pattern=r"^[A-Za-z]{2}$")
+    operator: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,50}$")
+    otp_code: str | None = Field(default=None, pattern=r"^[A-Za-z0-9]{3,12}$")
+
+
+class PaymentOptions(BaseModel):
+    providers: list[str]
+    default: str
+
+
+class SebPayOperator(BaseModel):
+    name: str
+    code: str
+    otp_required: bool
+    ussd_code: str | None
 
 
 class PaymentOut(BaseModel):

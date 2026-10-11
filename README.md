@@ -29,9 +29,11 @@ Pour deployer en production (VPS + Docker Compose + HTTPS automatique), voir
    **Avant validation, le telephone et l'email ne sont jamais renvoyes par
    l'API**, ni dans les annonces publiques ni dans les listes de demandes.
 
-## Paiement — LigdiCash
+## Paiement — LigdiCash et SebPay
 
-Le paiement supporte deux modes, controles par `PAYMENT_PROVIDER` dans `backend/.env` :
+Le paiement supporte trois modes, controles par `PAYMENT_PROVIDER` dans `backend/.env`
+(un seul, ou plusieurs separes par des virgules, ex. `ligdicash,sebpay` : le premier est
+le defaut et le membre choisit au moment de payer) :
 
 - **`mock`** (par defaut) : aucun appel externe, un bouton "Simuler la confirmation"
   permet de tester tout le parcours sans compte LigdiCash. C'est le mode actif
@@ -40,6 +42,15 @@ Le paiement supporte deux modes, controles par `PAYMENT_PROVIDER` dans `backend/
   LigdiCash (`app/ligdicash.py`) et renvoie un `checkout_url` vers lequel le
   frontend redirige l'utilisateur. LigdiCash le renvoie ensuite sur
   `/payments/{id}/return` (voir `frontend/src/pages/PaymentReturn.jsx`).
+- **`sebpay`** : debit Mobile Money direct via [SebPay](https://new.sebpay.bj/en/docs)
+  (`app/sebpay.py`). Le membre saisit le numero a debiter et choisit son operateur
+  (`GET /payments/sebpay/operators`, avec le code OTP/USSD quand l'operateur l'exige),
+  valide sur son telephone, et la page se met a jour toute seule. Cles :
+  `SEBPAY_PUBLIC_KEY` / `SEBPAY_SECRET_KEY` (`pk_test_`/`sk_test_` pour essayer).
+  Webhook : `POST /payments/sebpay/callback`, dont la signature HMAC-SHA256
+  (`X-SebPay-Signature`) est verifiee puis, comme pour LigdiCash, jamais crue sur
+  parole : le backend re-interroge SebPay (`GET /collections/{reference}`) et refuse
+  de crediter un montant different de celui demande.
 
 Pour activer LigdiCash, renseignez dans `backend/.env` :
 

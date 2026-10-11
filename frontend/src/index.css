@@ -1065,6 +1065,48 @@ input:focus, textarea:focus, select:focus {
   font-size: 0.95rem;
 }
 
+.payment-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+/* Higher specificity than the global column-flex `label`. */
+.payment-providers .payment-provider {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.payment-providers .payment-provider.selected {
+  border-color: var(--rose-500);
+  box-shadow: 0 0 0 3px var(--rose-100);
+}
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.payment-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--plum-700);
+}
+
+.payment-waiting {
+  text-align: center;
+  font-size: 0.92rem;
+}
+
 .payment-box.success {
   display: flex;
   align-items: center;
